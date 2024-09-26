@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D
 
 # The data to fit
@@ -48,6 +48,7 @@ N = 50
 lr = 0.03
 beta1 = 0.9
 beta2 = 0.999
+epsilon = 1e-8
 gamma = 0.7
 
 # Gradient descent algorithm
@@ -66,15 +67,28 @@ def momentum_gradient_descent(last_coeffs, last_update):
     this_coeffs = last_coeffs - this_update
     return this_coeffs, this_update
 
-def Adam_gradient_descent(last_coeffs, last_update, last_mse, last_v):
-    this_update = np.empty((2,))
+# def Adam_gradient_descent(last_coeffs, last_update, last_mse, last_v):
+#     this_update = np.empty((2,))
+#     error = obj_fun(*last_coeffs) - y
+#     this_update[0] = beta1 * last_update[0] + (1 - beta1) * lr * np.mean(error)
+#     this_update[1] = beta1 * last_update[1] + (1 - beta1) * lr * np.mean(error * x)
+#     this_mse = mse(*last_coeffs)
+#     this_v = beta2 * last_v + (1 - beta2) * this_mse
+#     this_coeffs = last_coeffs - this_update
+#     return this_coeffs, this_update, this_mse, this_v
+
+def Adam_gradient_descent(last_coeffs, last_m, last_v, t):
     error = obj_fun(*last_coeffs) - y
-    this_update[0] = beta1 * last_update[0] + (1 - beta1) * lr * np.mean(error)
-    this_update[1] = beta1 * last_update[1] + (1 - beta1) * lr * np.mean(error * x)
-    this_mse = mse(*last_coeffs)
-    this_v = beta2 * last_v + (1 - beta2) * this_mse
-    this_coeffs = last_coeffs - this_update
-    return this_coeffs, this_update, this_mse, this_v
+    g = np.empty((2,))
+    g[0] = np.mean(error)
+    g[1] = np.mean(error * x)
+    this_m = beta1 * last_m + (1 - beta1) * g
+    this_v = beta2 * last_v + (1 - beta2) * (g ** 2)
+    m_hat = this_m / (1 - beta1 ** t)
+    v_hat = this_v / (1 - beta2 ** t)
+    this_coeffs = last_coeffs - lr * m_hat / (np.sqrt(v_hat) + epsilon)
+    return this_coeffs, this_m, this_v
+
 
 # Run gradient descent algorithm
 coeffs =[np.array((0, 0))] # In line with mse(bias, weight), bias is placed in front [0], weight is placed behind [1]
@@ -85,6 +99,7 @@ for j in range(1, N):
     coeffs.append(this_coeffs)
     all_mse.append(mse(*this_coeffs))
 final_bias, final_omega = coeffs[-1]
+print('Gradient Descent:')
 print(f"Final bias (b): {final_bias:.3f}")
 print(f"Final omega (ω): {final_omega:.3f}")
 
@@ -98,21 +113,22 @@ for j in range(1, N):
     momentum_coeffs.append(this_coeffs)
     momentum_all_mse.append(mse(*this_coeffs))
 momentum_final_bias, momentum_final_omega = momentum_coeffs[-1]
+print('Momentum Gradient Descent:')
 print(f"Final bias (b): {momentum_final_bias:.3f}")
 print(f"Final omega (ω): {momentum_final_omega:.3f}")
 
 # Run Adam gradient descent algorithm
 adam_coeffs =[np.array((0, 0))] # In line with mse(bias, weight), bias is placed in front [0], weight is placed behind [1]
 adam_all_mse = [mse(*adam_coeffs[0])] # Using * is very convenient
-last_update = np.array((0, 0))
-last_mse = 0
-last_v = 0
+last_mse = np.array((0, 0))
+last_v = np.array((0, 0))
 for j in range(1, N):
     last_coeffs = adam_coeffs[-1]
-    this_coeffs, last_update, last_mse, last_v = Adam_gradient_descent(last_coeffs, last_update, last_mse, last_v)
+    this_coeffs, last_m, last_v = Adam_gradient_descent(last_coeffs, last_mse, last_v, j)
     adam_coeffs.append(this_coeffs)
     adam_all_mse.append(mse(*this_coeffs))
 adam_final_bias, adam_final_omega = adam_coeffs[-1]
+print('Adam Gradient Descent:')
 print(f"Final bias (b): {adam_final_bias:.3f}")
 print(f"Final omega (ω): {adam_final_omega:.3f}")
 
@@ -125,13 +141,14 @@ def update(frame):
     ax2.set_zlabel('Cost')
     ax2.set_title('Cost function')
     if frame < N:
-        ax2.scatter(*zip(*coeffs[:frame+1]), c='blue', s=10, lw=0, zs=all_mse[:frame+1])
-        ax2.scatter(*zip(*momentum_coeffs[:frame+1]), c='red', s=10, lw=0, zs=momentum_all_mse[:frame+1])
-        ax2.scatter(*zip(*adam_coeffs[:frame+1]), c='green', s=10, lw=0, zs=adam_all_mse[:frame+1])
+        ax2.scatter(*zip(*coeffs[:frame+1]), c='blue', s=30, lw=0, zs=all_mse[:frame+1])
+        ax2.scatter(*zip(*momentum_coeffs[:frame+1]), c='red', s=30, lw=0, zs=momentum_all_mse[:frame+1])
+        ax2.scatter(*zip(*adam_coeffs[:frame+1]), c='green', s=30, lw=0, zs=adam_all_mse[:frame+1])
     else:
-        ax2.scatter(*zip(*coeffs), c='blue', s=10, lw=0, zs=all_mse)
-        ax2.scatter(*zip(*momentum_coeffs), c='red', s=10, lw=0, zs=momentum_all_mse)
-        ax2.scatter(*zip(*adam_coeffs), c='green', s=10, lw=0, zs=adam_all_mse)
+        ax2.scatter(*zip(*coeffs), c='blue', s=30, lw=0, zs=all_mse)
+        ax2.scatter(*zip(*momentum_coeffs), c='red', s=30, lw=0, zs=momentum_all_mse)
+        ax2.scatter(*zip(*adam_coeffs), c='green', s=30, lw=0, zs=adam_all_mse)
 
 ani = FuncAnimation(fig, update, frames=range(N+1), repeat=False)
+ani.save('gradient_descent_animation.gif', writer=PillowWriter(fps=10))
 plt.show()
