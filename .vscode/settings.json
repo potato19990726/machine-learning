@@ -1,0 +1,28 @@
+{
+  "cSpell.ignoreWords": ["coeffs"],
+  "cSpell.words": [
+    "arrowprops",
+    "arrowstyle",
+    "axbox",
+    "clabel",
+    "colour",
+    "figsize",
+    "fontsize",
+    "isscalar",
+    "meshgrid",
+    "ncols",
+    "newaxis",
+    "nrows",
+    "xlabel",
+    "xytext",
+    "ylabel"
+  ],
+  "cSpell.customDictionaries": {
+    "custom-dictionary-workspace": {
+      "name": "custom-dictionary-workspace",
+      "path": "${workspaceFolder:machine-learning}/.cspell/custom-dictionary-workspace.txt",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  }
+}
