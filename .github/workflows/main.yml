@@ -26,9 +26,6 @@ jobs:
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "## Model Metrics" > report.md
-          cat metrics.txt >> report.md
-            
           echo '## Gradient Descent Animation' >> report.md
           echo '![Gradient Descent Animation](gradient_descent_animation.gif)' >> report.md
 
