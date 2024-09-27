@@ -1,32 +1,29 @@
 name: GD Workflow
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   pull_request:
-    branches: ["main"]
-  workflow_dispatch:
-
-permissions: write-all
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true
+      - name: Checkout
+        uses: actions/checkout@v3
+        
       - uses: iterative/setup-cml@v2
+
       - name: Install Packages
         run: pip install --upgrade pip && pip install -r requirements.txt && pip install black
-      - name: Format
-        run: black *.py
-      - name: Train
-        run: python gradientDescentAlgorithm.py
-      - name: Evaluation
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo '## Gradient Descent Animation' >> report.md
-          echo '![Gradient Descent Animation](gradient_descent_animation.gif)' >> report.md
 
-          cml comment create report.md
+      - name: Run Python Script
+        run: python gradientDescentAlgorithm.py
+
+      - name: Upload the generated GIF
+        uses: actions/upload-artifact@v2
+        with:
+          name: gradient_descent_animation
+          path: gradient_descent_animation.gif
