@@ -67,16 +67,6 @@ def momentum_gradient_descent(last_coeffs, last_update):
     this_coeffs = last_coeffs - this_update
     return this_coeffs, this_update
 
-# def Adam_gradient_descent(last_coeffs, last_update, last_mse, last_v):
-#     this_update = np.empty((2,))
-#     error = obj_fun(*last_coeffs) - y
-#     this_update[0] = beta1 * last_update[0] + (1 - beta1) * lr * np.mean(error)
-#     this_update[1] = beta1 * last_update[1] + (1 - beta1) * lr * np.mean(error * x)
-#     this_mse = mse(*last_coeffs)
-#     this_v = beta2 * last_v + (1 - beta2) * this_mse
-#     this_coeffs = last_coeffs - this_update
-#     return this_coeffs, this_update, this_mse, this_v
-
 def Adam_gradient_descent(last_coeffs, last_m, last_v, t):
     error = obj_fun(*last_coeffs) - y
     g = np.empty((2,))
@@ -120,11 +110,11 @@ print(f"Final omega (ω): {momentum_final_omega:.3f}")
 # Run Adam gradient descent algorithm
 adam_coeffs =[np.array((0, 0))] # In line with mse(bias, weight), bias is placed in front [0], weight is placed behind [1]
 adam_all_mse = [mse(*adam_coeffs[0])] # Using * is very convenient
-last_mse = np.array((0, 0))
+last_m = np.array((0, 0))
 last_v = np.array((0, 0))
 for j in range(1, N):
     last_coeffs = adam_coeffs[-1]
-    this_coeffs, last_m, last_v = Adam_gradient_descent(last_coeffs, last_mse, last_v, j)
+    this_coeffs, last_m, last_v = Adam_gradient_descent(last_coeffs, last_m, last_v, j)
     adam_coeffs.append(this_coeffs)
     adam_all_mse.append(mse(*this_coeffs))
 adam_final_bias, adam_final_omega = adam_coeffs[-1]
