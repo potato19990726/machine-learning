@@ -171,73 +171,74 @@ def run_optimization(optimizer, lr, gamma=None, beta1=None, beta2=None, n_iterat
     return coeffs[-1], all_mse[-1]
 
 def grid_search():
-    optimizers = ['gd', 'momentum', 'adam']
-    learning_rates = [x for x in np.linspace(0.01, 0.3, 50)]
-    gammas = [x for x in np.linspace(0.5, 0.95, 50)]
-    beta1s = [x for x in np.linspace(0.8, 0.9, 10)]
-    beta2s = [x for x in np.linspace(0.8, 0.9, 10)]
+    learning_rates = np.linspace(0.01, 0.3, 50)
+    gammas = np.linspace(0.5, 0.95, 50)
+    beta1s = np.linspace(0.8, 0.99, 20)
+    beta2s = np.linspace(0.8, 0.999, 20)
     
     best_params = {}
-    best_mse = float('inf')
     
-    for optimizer in optimizers:
-        for lr in learning_rates:
-            if optimizer == 'gd':
-                final_coeffs, final_mse = run_optimization(optimizer, lr)
-                if final_mse < best_mse:
-                    best_mse = final_mse
-                    best_params = {'optimizer': optimizer, 'lr': lr}
-            elif optimizer == 'momentum':
-                for gamma in gammas:
-                    final_coeffs, final_mse = run_optimization(optimizer, lr, gamma=gamma)
-                    if final_mse < best_mse:
-                        best_mse = final_mse
-                        best_params = {'optimizer': optimizer, 'lr': lr, 'gamma': gamma}
-            elif optimizer == 'adam':
-                for beta1 in beta1s:
-                    for beta2 in beta2s:
-                        final_coeffs, final_mse = run_optimization(optimizer, lr, beta1=beta1, beta2=beta2)
-                        if final_mse < best_mse:
-                            best_mse = final_mse
-                            best_params = {'optimizer': optimizer, 'lr': lr, 'beta1': beta1, 'beta2': beta2}
+    # Gradient Descent
+    best_mse_gd = float('inf')
+    for lr in learning_rates:
+        final_coeffs, final_mse = run_optimization('gd', lr)
+        if final_mse < best_mse_gd:
+            best_mse_gd = final_mse
+            best_params['gd'] = {'lr': lr}
     
-    print("Best parameters:", best_params)
-    print("Best MSE:", best_mse)
+    # Momentum
+    best_mse_momentum = float('inf')
+    for lr in learning_rates:
+        for gamma in gammas:
+            final_coeffs, final_mse = run_optimization('momentum', lr, gamma=gamma)
+            if final_mse < best_mse_momentum:
+                best_mse_momentum = final_mse
+                best_params['momentum'] = {'lr': lr, 'gamma': gamma}
+    
+    # Adam
+    best_mse_adam = float('inf')
+    for lr in learning_rates:
+        for beta1 in beta1s:
+            for beta2 in beta2s:
+                final_coeffs, final_mse = run_optimization('adam', lr, beta1=beta1, beta2=beta2)
+                if final_mse < best_mse_adam:
+                    best_mse_adam = final_mse
+                    best_params['adam'] = {'lr': lr, 'beta1': beta1, 'beta2': beta2}
+    
+    print("Best parameters for Gradient Descent:", best_params['gd'])
+    print("Best MSE for Gradient Descent:", best_mse_gd)
+    print("Best parameters for Momentum:", best_params['momentum'])
+    print("Best MSE for Momentum:", best_mse_momentum)
+    print("Best parameters for Adam:", best_params['adam'])
+    print("Best MSE for Adam:", best_mse_adam)
     return best_params
 
 # Run grid search
 best_params = grid_search()
 
-# Use the best parameters for the final run and visualization
-final_optimizer = best_params['optimizer']
-final_lr = best_params['lr']
+# Visualize the results for each algorithm
+plt.figure(figsize=(18, 6))
 
-if final_optimizer == 'momentum':
-    final_gamma = best_params['gamma']
-    final_coeffs, final_mse = run_optimization(final_optimizer, final_lr, gamma=final_gamma)
-elif final_optimizer == 'adam':
-    final_beta1 = best_params['beta1']
-    final_beta2 = best_params['beta2']
-    final_coeffs, final_mse = run_optimization(final_optimizer, final_lr, beta1=final_beta1, beta2=final_beta2)
-else:  # 'gd'
-    final_coeffs, final_mse = run_optimization(final_optimizer, final_lr)
+for i, (optimizer, params) in enumerate(best_params.items()):
+    plt.subplot(1, 3, i+1)
+    
+    if optimizer == 'gd':
+        final_coeffs, _ = run_optimization(optimizer, params['lr'])
+    elif optimizer == 'momentum':
+        final_coeffs, _ = run_optimization(optimizer, params['lr'], gamma=params['gamma'])
+    else:  # 'adam'
+        final_coeffs, _ = run_optimization(optimizer, params['lr'], beta1=params['beta1'], beta2=params['beta2'])
 
-print(f"Final optimization results:")
-print(f"Optimizer: {final_optimizer}")
-print(f"Learning rate: {final_lr}")
-print(f"Final coefficients: {final_coeffs}")
-print(f"Final MSE: {final_mse}")
+    plt.scatter(x, y, color='blue', label='Data points', alpha=0.5)
+    x_line = np.linspace(min(x), max(x), 100)
+    y_line = final_coeffs[1] * x_line + final_coeffs[0]
+    plt.plot(x_line, y_line, color='red', label='Final fit')
+    plt.xlabel('X')
+    plt.ylabel('y')
+    plt.title(f'Final fit using {optimizer.upper()} optimizer')
+    plt.legend()
 
-# Visualize the results
-plt.figure(figsize=(12, 8))
-plt.scatter(x, y, color='blue', label='Data points')  # 使用原始的 x 和 y
-x_line = np.linspace(min(x), max(x), 100)
-y_line = final_coeffs[1] * x_line + final_coeffs[0]  # 注意係數的順序
-plt.plot(x_line, y_line, color='red', label='Final fit')
-plt.xlabel('X')
-plt.ylabel('y')
-plt.title(f'Final fit using {final_optimizer.upper()} optimizer')
-plt.legend()
+plt.tight_layout()
 plt.show()
-plt.savefig('bestAlgorithmResult.png')
+plt.savefig('bestAlgorithmResults.png')
 plt.close()
