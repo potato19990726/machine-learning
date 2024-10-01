@@ -28,5 +28,6 @@ jobs:
         run: |
           echo '## Gradient Descent Animation' >> report.md
           echo '![Gradient Descent Animation](gradient_descent_animation.gif)' >> report.md
+          echo '![Best Algorithm Result](bestAlgorithmResult.png)' >> report.md
 
           cml comment create report.md
